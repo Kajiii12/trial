@@ -1,16 +1,18 @@
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
+# Helper function for database connection
 def get_db_connection():
     connection = sqlite3.connect('todo_app.db')
     connection.row_factory = sqlite3.Row
     return connection
 
-# Initialize SQLite database and create the users and tasks table if they don't exist
+# Initialize SQLite database and create tables
 def initialize_db():
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -34,6 +36,8 @@ def initialize_db():
             title TEXT NOT NULL,
             description TEXT NOT NULL,
             due_date DATE NOT NULL,
+            priority TEXT DEFAULT 'LOW',
+            status TEXT DEFAULT 'Pending',
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
@@ -43,23 +47,23 @@ def initialize_db():
 
 initialize_db()
 
+# Home route
 @app.route("/")
 def index():
     if 'user_id' in session:
-        return redirect(url_for('dashboard'))  # Redirect logged-in users to the dashboard
-    return render_template("login.html")  # Landing page
+        return redirect(url_for('dashboard'))
+    return render_template("login.html")
 
+# Registration route
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        # Handle registration logic
-        first_name = request.form["first_name"]
-        last_name = request.form["last_name"]
-        email = request.form["email"]
+        first_name = request.form["first_name"].strip()
+        last_name = request.form["last_name"].strip()
+        email = request.form["email"].strip()
         password = request.form["password"]
         password_hash = generate_password_hash(password)
 
-        # Insert user data into the database
         try:
             connection = get_db_connection()
             cursor = connection.cursor()
@@ -78,6 +82,7 @@ def register():
 
     return render_template('registration.html')
 
+# Login route
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -91,26 +96,25 @@ def login():
             user = cursor.fetchone()
             connection.close()
 
-            if user:
-                if check_password_hash(user[4], password):
-                    session['user_id'] = user[0]
-                    session['user_name'] = f"{user[1]} {user[2]}"
-                    flash('Login successful!', 'success')
-                    return redirect(url_for('dashboard'))
+            if user and check_password_hash(user["password_hash"], password):
+                session['user_id'] = user["id"]
+                session['user_name'] = f"{user['first_name']} {user['last_name']}"
+                flash('Login successful!', 'success')
+                return redirect(url_for('dashboard'))
             flash('Invalid email or password.', 'danger')
         except Exception as e:
             flash(f"Error: {str(e)}", 'danger')
 
     return render_template('login.html')
 
+# Logout route
 @app.route('/logout')
 def logout():
     session.clear()
-    response = make_response(redirect(url_for('login')))
-    response.set_cookie('session', '', expires=0)  # Clear session cookie
     flash('You have been logged out.', 'info')
-    return response
+    return redirect(url_for('login'))
 
+# Dashboard route
 @app.route("/dashboard")
 def dashboard():
     if 'user_id' not in session:
@@ -124,38 +128,14 @@ def dashboard():
     cursor = connection.cursor()
     cursor.execute('''
         SELECT * FROM tasks WHERE user_id = ?
+        ORDER BY due_date ASC, priority DESC
     ''', (session['user_id'],))
     tasks = cursor.fetchall()
     connection.close()
 
     return render_template("dashboard.html", user_first_name=user_first_name, tasks=tasks)
 
-# @app.route("/add_task", methods=["GET", "POST"])
-# def add_task():
-#     if 'user_id' not in session:
-#         flash('Please log in to add tasks.', 'warning')
-#         return redirect(url_for('login'))
-
-#     if request.method == "POST":
-#         title = request.form["title"]
-#         description = request.form["description"]
-#         due_date = request.form["due_date"]
-
-#         # Insert the new task into the database
-#         connection = get_db_connection()
-#         cursor = connection.cursor()
-#         cursor.execute('''
-#             INSERT INTO tasks (user_id, title, description, due_date)
-#             VALUES (?, ?, ?, ?)
-#         ''', (session['user_id'], title, description, due_date))
-#         connection.commit()
-#         connection.close()
-
-#         flash('Task added successfully!', 'success')
-#         return redirect(url_for('dashboard'))
-
-#     return render_template('add_task.html')
-
+# Add task route
 @app.route("/add_task", methods=["GET", "POST"])
 def add_task():
     if 'user_id' not in session:
@@ -166,17 +146,24 @@ def add_task():
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         due_date = request.form.get("due_date", "").strip()
+        priority = request.form.get("priority", "LOW").strip()
 
         if not title or not description or not due_date:
             flash("All fields are required to add a task.", "danger")
             return redirect(url_for('add_task'))
 
+        try:
+            due_date = datetime.strptime(due_date, '%Y-%m-%d')  # Validate date format
+        except ValueError:
+            flash("Invalid date format. Use YYYY-MM-DD.", "danger")
+            return redirect(url_for('add_task'))
+
         connection = get_db_connection()
         cursor = connection.cursor()
         cursor.execute('''
-            INSERT INTO tasks (user_id, title, description, due_date)
-            VALUES (?, ?, ?, ?)
-        ''', (session['user_id'], title, description, due_date))
+            INSERT INTO tasks (user_id, title, description, due_date, priority)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (session['user_id'], title, description, due_date, priority))
         connection.commit()
         connection.close()
 
@@ -185,7 +172,7 @@ def add_task():
 
     return render_template('add_task.html')
 
-
+# Update task route
 @app.route("/update_task/<int:task_id>", methods=["GET", "POST"])
 def update_task(task_id):
     if 'user_id' not in session:
@@ -206,16 +193,24 @@ def update_task(task_id):
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         due_date = request.form.get("due_date", "").strip()
+        priority = request.form.get("priority", "LOW").strip()
+        status = request.form.get("status", "Pending").strip()
 
         if not title or not description or not due_date:
             flash("All fields are required to update the task.", "danger")
             return redirect(url_for('update_task', task_id=task_id))
 
+        try:
+            due_date = datetime.strptime(due_date, '%Y-%m-%d')  # Validate date format
+        except ValueError:
+            flash("Invalid date format. Use YYYY-MM-DD.", "danger")
+            return redirect(url_for('update_task', task_id=task_id))
+
         cursor.execute('''
             UPDATE tasks
-            SET title = ?, description = ?, due_date = ?
+            SET title = ?, description = ?, due_date = ?, priority = ?, status = ?
             WHERE id = ? AND user_id = ?
-        ''', (title, description, due_date, task_id, session['user_id']))
+        ''', (title, description, due_date, priority, status, task_id, session['user_id']))
         connection.commit()
         connection.close()
 
@@ -225,7 +220,7 @@ def update_task(task_id):
     connection.close()
     return render_template('update_task.html', task=task)
 
-
+# Delete task route
 @app.route("/delete_task/<int:task_id>", methods=["POST"])
 def delete_task(task_id):
     if 'user_id' not in session:
@@ -240,11 +235,6 @@ def delete_task(task_id):
 
     flash('Task deleted successfully!', 'success')
     return redirect(url_for('dashboard'))
-
-
-@app.route("/main_dashboard")
-def main_dashboard():
-    return render_template('main_dashboard.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

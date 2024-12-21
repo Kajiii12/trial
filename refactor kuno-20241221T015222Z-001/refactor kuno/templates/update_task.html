@@ -35,7 +35,7 @@
             color: #555555;
         }
 
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             padding: 10px;
             font-size: 16px;
@@ -44,10 +44,11 @@
         }
 
         textarea {
-            height: 150px;
+            height: 100px;
         }
 
         .btn {
+            display: inline-block;
             background-color: #3E4A89;
             color: white;
             padding: 10px 20px;
@@ -55,12 +56,27 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            width: 100%;
+            width: 48%;
             transition: background-color 0.3s ease;
+            text-align: center;
         }
 
         .btn:hover {
             background-color: #2E3C6C;
+        }
+
+        .btn.cancel {
+            background-color: #999;
+        }
+
+        .btn.cancel:hover {
+            background-color: #777;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
         }
 
         .error, .success {
@@ -76,20 +92,31 @@
         .success {
             color: green;
         }
+
+        @media (max-width: 600px) {
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Update Task</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
+        <!-- {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
                     <div class="{{ 'error' if category == 'danger' else 'success' }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
-        {% endwith %}
+        {% endwith %} -->
 
-        <form method="POST">
+        <form method="POST" onsubmit="return validateForm()">
             <div class="form-group">
                 <label for="title">Task Title</label>
                 <input type="text" id="title" name="title" required value="{{ task['title'] }}">
@@ -105,8 +132,35 @@
                 <input type="date" id="due_date" name="due_date" required value="{{ task['due_date'] }}">
             </div>
 
-            <button type="submit" class="btn">Update Task</button>
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority" required>
+                    <option value="LOW" {% if task['priority'] == 'LOW' %}selected{% endif %}>Low</option>
+                    <option value="MEDIUM" {% if task['priority'] == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                    <option value="HIGH" {% if task['priority'] == 'HIGH' %}selected{% endif %}>High</option>
+                </select>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn">Update Task</button>
+                <a href="/dashboard" class="btn cancel">Cancel</a>
+            </div>
         </form>
     </div>
+
+    <script>
+        function validateForm() {
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const dueDate = document.getElementById('due_date').value;
+
+            if (!title || !description || !dueDate) {
+                alert('All fields are required.');
+                return false;
+            }
+
+            return true;
+        }
+    </script>
 </body>
 </html>
