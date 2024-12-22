@@ -13,7 +13,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f4f4f9; /* Light gray background similar to the dashboard */
+            background-color: #f4f4f9; /* Light gray background */
         }
         .container {
             background: #ffffff;
@@ -27,12 +27,12 @@
         h1 {
             margin-bottom: 20px;
             font-size: 28px;
-            color: #3E4A89; /* Dark blue color matching the dashboard */
+            color: #3E4A89; /* Dark blue color */
         }
         h2 {
             margin-bottom: 20px;
             font-size: 24px;
-            color: #3E4A89; /* Same dark blue color for sub-header */
+            color: #3E4A89; /* Same dark blue color */
         }
         .form-group {
             margin-bottom: 15px;
@@ -43,16 +43,16 @@
             margin-bottom: 5px;
             color: #555555; /* Lighter gray for the label text */
         }
-        input {
+        input, select {
             width: 100%;
             padding: 12px;
             font-size: 16px;
-            border: 1px solid #3E4A89; /* Dark blue border matching the theme */
+            border: 1px solid #3E4A89; /* Dark blue border */
             border-radius: 5px;
         }
         button {
             padding: 12px 20px;
-            background: #3E4A89; /* Dark blue button matching the dashboard */
+            background: #3E4A89; /* Dark blue button */
             color: #fff;
             border: none;
             border-radius: 5px;
@@ -98,6 +98,16 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
             </div>
+
+            <!-- Role selection for Admin or User -->
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" name="role" required>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
             <button type="submit">Sign Up</button>
         </form>
         <p>Already have an account? <a href="/login">Login</a></p>

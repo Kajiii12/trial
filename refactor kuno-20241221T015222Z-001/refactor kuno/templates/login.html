@@ -98,7 +98,7 @@
             color: #555555;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 10px; /* Reduced padding for better spacing */
             font-size: 16px;
@@ -118,7 +118,6 @@
             transition: background-color 0.3s ease;
             width: 100%; /* Ensures alignment with the textboxes */
         }
-
 
         button:hover {
             background: #2E3C6C;
@@ -149,6 +148,52 @@
         .modal-footer a:hover {
             text-decoration: underline;
         }
+        /* Flash Message Container */
+        .flash {
+            margin: 20px auto; /* Center align and spacing */
+            padding: 15px 20px; /* Comfortable padding */
+            border-radius: 8px; /* Rounded corners */
+            font-size: 16px; /* Readable text size */
+            font-weight: 500; /* Slightly bold for emphasis */
+            width: 90%; /* Adapt to small screens */
+            max-width: 600px; /* Limit size on larger screens */
+            text-align: center; /* Center-align text */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+            position: relative; /* For close button positioning */
+            transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth animations */
+        }
+
+        /* Success Flash */
+        .flash-success {
+            background-color: #d4edda; /* Light green background */
+            color: #155724; /* Dark green text */
+            border: 1px solid #c3e6cb; /* Green border */
+        }
+
+        /* Error Flash */
+        .flash-error {
+            background-color: #f8d7da; /* Light red background */
+            color: #721c24; /* Dark red text */
+            border: 1px solid #f5c6cb; /* Red border */
+        }
+
+        /* Close Button for Flash Messages */
+        .flash .close {
+            position: absolute;
+            top: 50%; /* Center vertically */
+            right: 15px; /* Align to the right */
+            transform: translateY(-50%); /* Adjust centering */
+            font-size: 18px; /* Easy-to-click size */
+            font-weight: bold;
+            color: #555; /* Neutral color */
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .flash .close:hover {
+            color: #000; /* Darker color on hover */
+        }
+
     </style>
 </head>
 <body>
@@ -161,6 +206,22 @@
         </ul>
     </nav>
 </header>
+
+<div id="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            <div>
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        <span class="close">&times;</span>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</div>
+
 
 <div class="hero">
     <h1>Plan & Done</h1>
@@ -180,6 +241,7 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
             </div>
+
             <button type="submit">Login</button>
         </form>
         <div class="modal-footer">
@@ -211,6 +273,28 @@
             modal.style.display = 'none';
         }
     });
+    // Functionality to dismiss flash messages
+    document.querySelectorAll('.flash .close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', () => {
+            const flashMessage = closeBtn.parentElement;
+            flashMessage.style.opacity = '0'; // Fade out
+            flashMessage.style.transform = 'translateY(-10px)'; // Slide up
+            setTimeout(() => {
+                flashMessage.remove(); // Remove element after animation
+            }, 300); // Matches the CSS transition duration
+        });
+    });
+
+    // Optional: Automatically dismiss flash messages after 5 seconds
+    setTimeout(() => {
+        document.querySelectorAll('.flash').forEach(flashMessage => {
+            flashMessage.style.opacity = '0'; // Fade out
+            flashMessage.style.transform = 'translateY(-10px)'; // Slide up
+            setTimeout(() => {
+                flashMessage.remove(); // Remove element
+            }, 300);
+        });
+    }, 5000); // Auto-dismiss after 5 seconds
 </script>
 
 </body>
