@@ -72,13 +72,71 @@
         a:hover {
             text-decoration: underline;
         }
+        #camera {
+            width: 100%;
+            border: 1px solid #3E4A89;
+            border-radius: 5px;
+        }
+        #capture-btn {
+            margin-top: 20px;
+        }
+
+        /* Modal Styles */
+        #camera-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%; /* Ensure modal is responsive */
+            text-align: center;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Capture button inside modal */
+        #capture-btn {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background-color: #3E4A89;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        #capture-btn:hover {
+            background-color: #2E3C6C;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Plan & Done</h1>
         <h2>Create an Account</h2>
-        <form action="/register" method="post">
+        <form id="registration-form" action="/register" method="post">
             <div class="form-group">
                 <label for="first_name">First Name</label>
                 <input type="text" id="first_name" name="first_name" required>
@@ -108,9 +166,92 @@
                 </select>
             </div>
 
+            <!-- Camera Button to open the modal -->
+            <div class="form-group">
+                <button type="button" id="open-camera-btn">Capture Profile Picture</button>
+                <input type="hidden" name="profile_picture" id="profile_picture">
+            </div>
+
             <button type="submit">Sign Up</button>
         </form>
         <p>Already have an account? <a href="/login">Login</a></p>
     </div>
+
+    <!-- Camera Modal -->
+    <div id="camera-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal-btn">&times;</span>
+            <h2>Capture Your Profile Picture</h2>
+            <video id="camera" autoplay></video>
+            <button type="button" id="capture-btn">Capture Image</button>
+            <canvas id="canvas" style="display: none;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Modal Elements
+        const openCameraBtn = document.getElementById("open-camera-btn");
+        const cameraModal = document.getElementById("camera-modal");
+        const closeModalBtn = document.getElementById("close-modal-btn");
+
+        // Access the camera
+        const camera = document.getElementById("camera");
+        const captureBtn = document.getElementById("capture-btn");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Show the modal when the button is clicked
+        openCameraBtn.addEventListener("click", function() {
+            cameraModal.style.display = "flex"; // Show the modal
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    camera.srcObject = stream;
+                })
+                .catch((err) => {
+                    console.log("Error accessing camera: " + err);
+                });
+        });
+
+        // Capture image from the video feed
+        captureBtn.addEventListener("click", function() {
+            const videoWidth = camera.videoWidth;
+            const videoHeight = camera.videoHeight;
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+            ctx.drawImage(camera, 0, 0, videoWidth, videoHeight);
+
+            // Convert the captured image to Base64
+            const imageData = canvas.toDataURL("image/jpeg");
+
+            // Set the Base64 image data to the hidden input field
+            document.getElementById("profile_picture").value = imageData;
+
+            // Close the modal after capturing the image
+            cameraModal.style.display = "none";
+
+            // Stop camera stream when closing the modal
+            const stream = camera.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+        });
+
+        // Close the modal
+        closeModalBtn.addEventListener("click", function() {
+            cameraModal.style.display = "none";
+            // Stop camera stream when closing the modal
+            const stream = camera.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+        });
+
+        // Form submission handler to ensure an image was captured
+        document.getElementById("registration-form").addEventListener("submit", function(event) {
+            const profileImage = document.getElementById("profile_picture").value;
+            if (!profileImage) {
+                event.preventDefault();
+                alert("Please capture a profile picture.");
+            }
+        });
+    </script>
 </body>
 </html>

@@ -166,212 +166,357 @@
 </head>
 <body>
 
-<header>
-    <div class="logo">Plan & Done</div>
-    <nav>
-        <ul>
-            <li><a href="#">Settings</a></li>
-            <li><a href="/logout">Logout</a></li>
-        </ul>
-    </nav>
-</header>
-
-<!-- Main Content -->
-<div class="main-content">
-    <div class="card">
-        <h4>Welcome, Admin - {{ session['user_name'] }}!</h4>
-        <p>Here's a quick overview of your dashboard. You can manage users, tasks, and more.</p>
+    <header>
+        <div class="logo">Plan & Done</div>
+        <nav>
+            <ul>
+                <li><a href="#">Settings</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="card">
+            <h4>Welcome, Admin - {{ session['user_name'] }}!</h4>
+            <p>Here's a quick overview of your dashboard. You can manage users, tasks, and more.</p>
+        </div>
+    
+        <div class="card">
+            <h4>Account Management</h4>
+            <p>Manage registered accounts and their access.</p>
+            <button id="main-view-users">View Users</button>
+        </div>
+    
+        <div class="card">
+            <h4>Task Management</h4>
+            <p>Oversee tasks that users are working on.</p>
+            <button id="main-view-tasks">View Tasks</button>
+        </div>
+    
+        <div class="card">
+            <h4>Reports</h4>
+            <p>Generate reports about user activity and task completion.</p>
+            <button id="main-view-reports">View Reports</button>
+        </div>
+    </div>
+    
+    <!-- Modal for User Management -->
+    <div id="usersModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-users">&times;</span>
+            <h3>Manage Registered Accounts</h3>
+            <table id="usersTable" border="1" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be populated by loadUsers() -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal for Task Management -->
+    <div id="tasksModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-tasks">&times;</span>
+            <h3>Manage Tasks</h3>
+            <div id="tasksContainer"></div> <!-- Dynamic Task Container -->
+        </div>
+    </div>
+    
+    <!-- Modal for Reports -->
+    <div id="reportsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-reports">&times;</span>
+            <h3>Generate Reports</h3>
+            <form id="report-form">
+                <label for="report-type">Select Report Type:</label>
+                <select id="report-type">
+                    <option value="user_activity">User Activity</option>
+                    <option value="task_completion">Task Completion</option>
+                </select>
+                <br><br>
+                <button type="button" id="generate-report">Generate Report</button>
+            </form>
+            <div id="report-output"></div> <!-- Will display the report data -->
+        </div>
     </div>
 
-    <div class="card">
-        <h4>User Management</h4>
-        <p>Manage registered users and their roles.</p>
-        <button id="main-view-users">View Users</button>
-    </div>
-
-    <div class="card">
-        <h4>Task Management</h4>
-        <p>Oversee tasks that users are working on.</p>
-        <button id="main-view-tasks">View Tasks</button>
-    </div>
-
-    <div class="card">
-        <h4>Reports</h4>
-        <p>Generate reports about user activity and task completion.</p>
-        <button id="main-view-reports">View Reports</button>
-    </div>
-</div>
-
-<!-- Modal for User Management -->
-<div id="usersModal" class="modal">
-    <div class="modal-content">
-        <span class="close" id="close-users">&times;</span>
-        <h3>Manage Users</h3>
-        <table id="usersTable" border="1" style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Rows will be populated by loadUsers() -->
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Modal for Task Management -->
-<div id="tasksModal" class="modal">
-    <div class="modal-content">
-        <span class="close" id="close-tasks">&times;</span>
-        <h3>Manage Tasks</h3>
-        <p>Here you can view and manage tasks.</p>
-    </div>
-</div>
-
-<!-- Modal for Reports -->
-<div id="reportsModal" class="modal">
-    <div class="modal-content">
-        <span class="close" id="close-reports">&times;</span>
-        <h3>Generate Reports</h3>
-        <p>Here you can generate user activity and task completion reports.</p>
-    </div>
-</div>
-
-<footer>
-    &copy; 2024 Plan & Done. All Rights Reserved.
-</footer>
-
-<script>
-    // Get modal elements
-    var usersModal = document.getElementById("usersModal");
-    var tasksModal = document.getElementById("tasksModal");
-    var reportsModal = document.getElementById("reportsModal");
-
-    // Get buttons to open modals
-    var viewUsersButton = document.getElementById("main-view-users");
-    var viewTasksButton = document.getElementById("main-view-tasks");
-    var viewReportsButton = document.getElementById("main-view-reports");
-
-    // Get the <span> elements to close modals
-    var closeUsers = document.getElementById("close-users");
-    var closeTasks = document.getElementById("close-tasks");
-    var closeReports = document.getElementById("close-reports");
-
-    // When the user clicks the "View Users" button, open the Users Modal
-    viewUsersButton.onclick = function() {
-        usersModal.style.display = "block";
-        loadUsers();  // Load users dynamically
-    }
-
-    // When the user clicks the "View Tasks" button, open the Tasks Modal
-    viewTasksButton.onclick = function() {
-        tasksModal.style.display = "block";
-    }
-
-    // When the user clicks the "View Reports" button, open the Reports Modal
-    viewReportsButton.onclick = function() {
-        reportsModal.style.display = "block";
-    }
-
-    // When the user clicks on <span> (x), close the modal
-    closeUsers.onclick = function() {
-        usersModal.style.display = "none";
-    }
-
-    closeTasks.onclick = function() {
-        tasksModal.style.display = "none";
-    }
-
-    closeReports.onclick = function() {
-        reportsModal.style.display = "none";
-    }
-
-    // Function to load users dynamically (You would replace this with an AJAX call in a real application)
-    function loadUsers() {
-        fetch('/api/users') // Fetch data from the Flask back-end
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
+    
+    <footer>
+        &copy; 2024 Plan & Done. All Rights Reserved.
+    </footer>
+    
+    <script>
+        // Get modal elements
+        var usersModal = document.getElementById("usersModal");
+        var tasksModal = document.getElementById("tasksModal");
+        var reportsModal = document.getElementById("reportsModal");
+    
+        // Get buttons to open modals
+        var viewUsersButton = document.getElementById("main-view-users");
+        var viewTasksButton = document.getElementById("main-view-tasks");
+        var viewReportsButton = document.getElementById("main-view-reports");
+    
+        // Get the <span> elements to close modals
+        var closeUsers = document.getElementById("close-users");
+        var closeTasks = document.getElementById("close-tasks");
+        var closeReports = document.getElementById("close-reports");
+    
+        // When the user clicks the "View Users" button, open the Users Modal
+        viewUsersButton.onclick = function() {
+            usersModal.style.display = "block";
+            loadUsers();  // Load users dynamically
+        }
+    
+        // When the user clicks the "View Tasks" button, open the Tasks Modal
+        viewTasksButton.onclick = function() {
+            tasksModal.style.display = "block";
+            loadTasks();  // Populate tasks dynamically when modal opens
+        }
+    
+        // When the user clicks the "View Reports" button, open the Reports Modal
+        viewReportsButton.onclick = function() {
+            reportsModal.style.display = "block";
+        }
+    
+        // When the user clicks on <span> (x), close the modal
+        closeUsers.onclick = function() {
+            usersModal.style.display = "none";
+        }
+    
+        closeTasks.onclick = function() {
+            tasksModal.style.display = "none";
+        }
+    
+        closeReports.onclick = function() {
+            reportsModal.style.display = "none";
+        }
+    
+        // Function to load users dynamically
+        function loadUsers() {
+            fetch('/api/users') // Fetch data from the Flask back-end
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json(); // Parse JSON response
+                })
+                .then(users => {
+                    var tableBody = document.querySelector('#usersTable tbody');
+                    tableBody.innerHTML = ''; // Clear existing table content
+    
+                    // Populate the table with user data
+                    users.forEach(user => {
+                        var row = document.createElement('tr');
+                        row.setAttribute('data-user-id', user.id); // Set the data-user-id attribute
+                        row.innerHTML = `
+                            <td>${user.username}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td class="actions">
+                                <button class="delete-btn">Delete</button>
+                                <button class="block-btn">${user.is_blocked ? 'Unblock' : 'Block'} Access</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+    
+                        // Add event listeners for delete and block/unblock
+                        row.querySelector('.delete-btn').addEventListener('click', function() {
+                            deleteUser(user.id);
+                        });
+    
+                        row.querySelector('.block-btn').addEventListener('click', function() {
+                            blockAccess(user.id, !user.is_blocked);
+                        });
+                    });
+                })
+                .catch(error => console.error('Error loading users:', error));
+        }
+    
+        // Function to delete a user
+        function deleteUser(userId) {
+            fetch(`/api/users/${userId}`, {
+                method: 'DELETE',
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message); // Show a success message
+                // Remove the user row from the table
+                const userRow = document.querySelector(`#usersTable tr[data-user-id="${userId}"]`);
+                if (userRow) {
+                    userRow.remove();
                 }
-                return response.json(); // Parse JSON response
             })
-            .then(users => {
-                var tableBody = document.querySelector('#usersTable tbody');
-                tableBody.innerHTML = ''; // Clear existing table content
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to delete user.');
+            });
+        }
+    
+        // Function to block a user's access
+        function blockAccess(userId, isBlocked) {
+            fetch('/api/users/block', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: userId, is_blocked: isBlocked }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message); // Show success message
+    
+                    // Optionally, update the UI
+                    const actionButton = document.querySelector(`#usersTable tr[data-user-id="${userId}"] .block-btn`);
+                    if (actionButton) {
+                        actionButton.textContent = isBlocked ? 'Unblock Access' : 'Block Access';
+                        actionButton.onclick = () => blockAccess(userId, !isBlocked);
+                    }
+                } else {
+                    alert('Failed to update user status. ' + (data.error || ''));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating user status.');
+            });
+        }
+    
+        // Function to load tasks grouped by concatenated first_name and last_name
+        function loadTasks() {
+            fetch('/api/tasks') // Fetch tasks from the backend
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(groupedTasks => {
+                    const container = document.getElementById('tasksContainer');
+                    container.innerHTML = ''; // Clear existing content
 
-                // Populate the table with user data
-                users.forEach(user => {
-                    var row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${user.username}</td>
-                        <td>${user.email}</td>
-                        <td>${user.role}</td>
-                        <td class="actions">
-                            <button onclick="deleteUser(${user.id})">Delete</button>
-                            <button onclick="blockAccess(${user.id}, ${!user.is_blocked})">
-                                ${user.is_blocked ? 'Unblock' : 'Block'} Access
-                            </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
+                    // Loop through users (now grouped by full name) and their tasks
+                    for (const [fullName, tasks] of Object.entries(groupedTasks)) {
+                        const userBlock = document.createElement('div');
+                        userBlock.innerHTML = `
+                            <h4>${fullName}'s Tasks</h4>
+                            <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                                <thead>
+                                    <tr>
+                                        <th>Task ID</th>
+                                        <th>Title</th>
+                                        <th>Description</th>
+                                        <th>Due Date</th> <!-- Changed from 'Deadline' to 'Due Date' -->
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tasks.map(task => `
+                                        <tr>
+                                            <td>${task.task_id}</td> <!-- Updated to use task.task_id -->
+                                            <td>${task.title}</td>
+                                            <td>${task.description}</td>
+                                            <td>${task.due_date}</td> <!-- Updated to use task.due_date -->
+                                            <td>${task.status}</td> <!-- Include status column -->
+                                            <td>
+                                                <button onclick="notifyUser(${task.task_id}, '${task.email}')">Notify</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                        container.appendChild(userBlock);
+                    }
+                })
+                .catch(error => console.error('Error loading tasks:', error));
+        }
+
+    
+        // Notify user about a nearing deadline
+        function notifyUser(taskId, userEmail) {
+            fetch(`/api/notify/${taskId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: userEmail })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message); // Show success or error message
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to send notification.');
+            });
+        }
+
+        // When the user clicks the "Generate Report" button, fetch the report data
+        document.getElementById("generate-report").onclick = function() {
+            var reportType = document.getElementById("report-type").value;
+            generateReport(reportType);
+        };
+
+        // Function to generate the selected report
+        function generateReport(reportType) {
+            fetch(`/api/reports?type=${reportType}`) // Adjust API to pass the report type
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(reportData => {
+                    displayReport(reportData);
+                })
+                .catch(error => {
+                    console.error('Error generating report:', error);
+                    alert('Failed to generate the report.');
                 });
-            })
-            .catch(error => console.error('Error loading users:', error));
-    }
+        }
 
-    // Function to delete a user
-    function deleteUser(userId) {
-        fetch('/delete-user', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: userId }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Deleted user with ID: ' + userId);
-                // Optionally refresh the user table or remove the user row from the table
-                document.getElementById(`user-row-${userId}`).remove();
+        // Function to display the report data
+        function displayReport(reportData) {
+            const reportOutput = document.getElementById("report-output");
+            reportOutput.innerHTML = ''; // Clear any previous report content
+
+            if (reportData && reportData.length > 0) {
+                const table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            ${Object.keys(reportData[0]).map(key => `<th>${key}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${reportData.map(row => `
+                            <tr>
+                                ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                reportOutput.appendChild(table);
             } else {
-                alert('Failed to delete user. ' + (data.error || ''));
+                reportOutput.innerHTML = "<p>No data available for this report.</p>";
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    }
+        }
 
-    // Function to block a user's access
-    function blockAccess(userId) {
-        fetch('/block-user', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: userId, is_blocked: true }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Blocked access for user with ID: ' + userId);
-                // Optionally update the UI to reflect the blocked status
-                document.getElementById(`user-status-${userId}`).innerText = 'Blocked';
-            } else {
-                alert('Failed to block access. ' + (data.error || ''));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    }
-
-</script>
-
-</body>
-</html>
+    </script>
+    
+    </body>
+    </html>
